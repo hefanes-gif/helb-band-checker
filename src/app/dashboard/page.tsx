@@ -45,7 +45,7 @@ export default function Dashboard(){
   setPaying(true); setMsg(`Sending STK to ${data.phone}...`);
   try{
    const res = await fetch("/api/mpesa/stk",{ method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({phone: data.phone, amount: 50}) });
-   const json = await res.json();
+   const text = await res.text(); let json:any={}; try{ json=JSON.parse(text); }catch{ json={ error: text.slice(0,300), ResponseCode:1 }; }
    if(json.ResponseCode==="0" || json.ResponseCode===0){
     setMsg("✅ STK sent! Enter PIN on phone. Auto-download in 12s...");
     setTimeout(async()=>{ await generatePDF(); setShowPay(false); setPaying(false); }, 12000);
