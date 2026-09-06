@@ -1,7 +1,11 @@
 ﻿"use client";
-import { useState, useEffect } from "react"; import Link from "next/link"; import { useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
 const bands=[ {max:23000,name:"BAND 1",sch:70,loan:25,family:5,desc:"Extremely Needy",color:"from-green-600 to-emerald-600"}, {max:60000,name:"BAND 2",sch:60,loan:30,family:10,desc:"Very Needy",color:"from-blue-600 to-indigo-600"}, {max:120000,name:"BAND 3",sch:50,loan:30,family:20,desc:"Needy",color:"from-yellow-500 to-orange-500"}, {max:300000,name:"BAND 4",sch:40,loan:30,family:30,desc:"Less Needy",color:"from-orange-500 to-red-500"}, {max:9999999,name:"BAND 5",sch:30,loan:30,family:40,desc:"Able",color:"from-red-600 to-rose-700"} ];
-export default function Home(){
+
+function Checker(){
  const searchParams=useSearchParams();
  const [income,setIncome]=useState(""); const [band,setBand]=useState<any>(null);
  const [refBand,setRefBand]=useState("");
@@ -19,5 +23,13 @@ export default function Home(){
    </div>
    <div className="bg-[#0a3d62] rounded-[24px] p-6 text-white h-fit"><h3 className="font-black">All 5 Bands</h3><div className="mt-4 space-y-2">{bands.map(b=><div key={b.name} className="flex justify-between items-center bg-white/10 p-3 rounded-xl text-sm"><span className="font-bold">{b.name}</span><span className="text-xs opacity-70">{b.desc}</span></div>)}</div></div>
   </div>
+ );
+}
+
+export default function Home(){
+ return (
+  <Suspense fallback={<div className="p-10 text-center">Loading...</div>}>
+   <Checker/>
+  </Suspense>
  );
 }
