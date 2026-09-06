@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import jsPDF from "jspdf";
 
 export default function Dashboard(){
  const [user,setUser]=useState<any>(null);
@@ -40,71 +40,60 @@ export default function Dashboard(){
  };
  const info = data?.band? bandInfo[data.band] : null;
 
+ const downloadPDF = () => {
+  if(!data) return;
+  const doc = new jsPDF();
+  doc.setFontSize(18);
+  doc.text("HEF FUNDING BAND - OFFICIAL LETTER 2026", 20, 30);
+  doc.setFontSize(12);
+  doc.text(`Name: ${data.full_name}`, 20, 50);
+  doc.text(`ID: ${data.id_number}`, 20, 60);
+  doc.text(`Band: ${data.band}`, 20, 70);
+  doc.text(`Income: KSH ${Number(data.income).toLocaleString()}`, 20, 80);
+  doc.text(`Scholarship: ${info?.sch}% | Loan: ${info?.loan}% | Family: ${info?.family}%`, 20, 90);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 110);
+  doc.text("hefbands.co.ke", 20, 130);
+  doc.save(`${data.full_name}-${data.band}.pdf`);
+ };
+
+ const shareWhatsapp = () => {
+  if(!data) return;
+  const text=`🔥 I am ${data.band}! Check your HEF Band: https://helb-band-checker.vercel.app/?ref=${data.band.toLowerCase().replace(' ','')}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank");
+ };
+
  return(
-  <div className="max-w-3xl mx-auto space-y-6">
-   {/* Header Card */}
-   <div className="bg-white rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.08)] border overflow-hidden">
-    <div className="bg-[#0a3d62] p-6 md:p-8 text-white flex justify-between items-center">
-     <div>
-      <h1 className="text-2xl md:text-3xl font-black leading-none">Student Dashboard</h1>
-      <p className="text-xs md:text-sm opacity-60 mt-2">Welcome back, <span className="font-bold text-white">{data?.full_name || user.email}</span></p>
-     </div>
-     <button onClick={logout} className="bg-white/10 hover:bg-red-500 text-white px-5 py-2.5 rounded-full text-xs font-black tracking-widest transition">LOGOUT</button>
+  <div className="max-w-3xl mx-auto space-y-4">
+   <div className="bg-white rounded-[24px] shadow border overflow-hidden">
+    <div className="bg-[#0a3d62] p-6 text-white flex justify-between items-center">
+     <div><h1 className="text-2xl font-black">Dashboard</h1><p className="text-xs opacity-60">Hi, {data?.full_name?.split(' ')[0] || user.email}</p></div>
+     <button onClick={logout} className="bg-white/10 px-5 py-2 rounded-full text-xs font-black">LOGOUT</button>
     </div>
-
     {data? (
-     <div className="p-6 md:p-8">
-      {/* BAND CARD */}
-      <div className={`bg-gradient-to-br ${info?.color || "from-[#0a3d62] to-[#1e6fa8]"} text-white p-7 rounded-[20px] shadow-xl relative overflow-hidden`}>
-       <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-       <div className="relative flex justify-between items-start">
-        <div>
-         <div className="text-[11px] tracking-[0.2em] opacity-70 font-black">YOUR FUNDING BAND • 2026</div>
-         <div className="text-6xl font-black mt-3 tracking-tighter">{data.band}</div>
-         <div className="mt-4 inline-flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-2 rounded-full text-sm font-bold">
-          <span>Income: KSH {Number(data.income).toLocaleString()}</span>
-         </div>
-        </div>
-        <div className="w-20 h-20 bg-white/15 backdrop-blur rounded-[20px] flex items-center justify-center text-4xl border border-white/20">🎓</div>
-       </div>
-
-       {/* Breakdown */}
-       {info && (
-        <div className="grid grid-cols-3 gap-3 mt-8">
-         <div className="bg-white text-[#0a3d62] p-4 rounded-2xl text-center"><div className="text-3xl font-black">{info.sch}%</div><div className="text-[10px] font-black tracking-widest mt-1">SCHOLARSHIP</div></div>
-         <div className="bg-white/15 backdrop-blur border border-white/20 p-4 rounded-2xl text-center"><div className="text-3xl font-black">{info.loan}%</div><div className="text-[10px] font-black tracking-widest mt-1">LOAN</div></div>
-         <div className="bg-white/15 backdrop-blur border border-white/20 p-4 rounded-2xl text-center"><div className="text-3xl font-black">{info.family}%</div><div className="text-[10px] font-black tracking-widest mt-1">FAMILY</div></div>
-        </div>
-       )}
+     <div className="p-6">
+      <div className={`bg-gradient-to-br ${info?.color || "from-[#0a3d62] to-[#1e6fa8]"} text-white p-6 rounded-[20px]`}>
+       <div className="text-5xl font-black">{data.band}</div>
+       <div className="mt-2 text-sm opacity-80">Income KSH {Number(data.income).toLocaleString()}</div>
+       {info && <div className="grid grid-cols-3 gap-2 mt-5">
+        <div className="bg-white text-[#0a3d62] p-3 rounded-xl text-center font-black">{info.sch}%<div className="text-[9px]">SCHOLARSHIP</div></div>
+        <div className="bg-white/20 p-3 rounded-xl text-center font-black">{info.loan}%<div className="text-[9px]">LOAN</div></div>
+        <div className="bg-white/20 p-3 rounded-xl text-center font-black">{info.family}%<div className="text-[9px]">FAMILY</div></div>
+       </div>}
       </div>
-
-      {/* Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-       {[
-        {label:"Full Name", value:data.full_name, icon:"👤"},
-        {label:"ID Number", value:data.id_number, icon:"🪪"},
-        {label:"Email Address", value:data.email, icon:"✉️"},
-        {label:"Phone Number", value:data.phone, icon:"📱"},
-       ].map((item)=>(
-        <div key={item.label} className="p-5 border-2 border-gray-100 rounded-[18px] hover:border-[#0a3d62]/20 transition group">
-         <div className="flex items-center gap-2"><span className="text-lg">{item.icon}</span><span className="text-[10px] font-black tracking-widest text-gray-400 group-hover:text-[#0a3d62]">{item.label.toUpperCase()}</span></div>
-         <div className="font-bold text-[#0a3d62] mt-2 text-[15px] break-all">{item.value}</div>
-        </div>
-       ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+       <button onClick={downloadPDF} className="bg-[#0a3d62] text-white py-4 rounded-2xl font-black text-sm">📄 DOWNLOAD PDF (KSH 50)</button>
+       <button onClick={shareWhatsapp} className="bg-[#25D366] text-white py-4 rounded-2xl font-black text-sm">📱 SHARE WHATSAPP</button>
       </div>
-
-      {/* Action */}
-      <div className="mt-8 flex gap-3">
-       <Link href="/calculator" className="flex-1 text-center bg-[#0a3d62] text-white py-4 rounded-2xl font-black text-sm hover:bg-black transition">RECALCULATE BAND</Link>
-       <Link href="/" className="flex-1 text-center bg-gray-100 text-[#0a3d62] py-4 rounded-2xl font-black text-sm hover:bg-gray-200 transition">HOME</Link>
+      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-[11px] text-yellow-800">💡 PDF is FREE for now. Later we connect M-Pesa to charge KSH 50 before download.</div>
+      <div className="grid grid-cols-2 gap-3 mt-6">
+       <div className="p-4 border-2 border-gray-100 rounded-xl"><div className="text-[10px] text-gray-400 font-black">FULL NAME</div><div className="font-bold text-sm">{data.full_name}</div></div>
+       <div className="p-4 border-2 border-gray-100 rounded-xl"><div className="text-[10px] text-gray-400 font-black">PHONE</div><div className="font-bold text-sm">{data.phone}</div></div>
       </div>
      </div>
     ) : (
-     <div className="p-12 text-center"><div className="text-gray-400 text-sm">No registration data found for {user.email}</div><Link href="/register" className="mt-4 inline-block bg-[#0a3d62] text-white px-6 py-2 rounded-full text-sm font-bold">Complete Registration</Link></div>
+     <div className="p-10 text-center text-sm text-gray-500">No data found</div>
     )}
    </div>
-
-   <div className="text-center text-[11px] text-gray-400">🔒 Secured by Supabase • Your data is encrypted</div>
   </div>
  );
 }
