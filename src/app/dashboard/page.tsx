@@ -60,18 +60,11 @@ export default function Dashboard(){
    });
    const json = await res.json();
    console.log(json);
-
-   if(json.ResponseCode === "0" || json.ResponseCode === 0){
-    setStatusMsg("✅ STK Push sent! Check your phone and enter M-Pesa PIN for Till 8629094 - KSH 50");
-    // Wait 15 sec for user to pay, then allow download
-    setTimeout(async()=>{
-     setStatusMsg("Payment confirmed! Downloading letter...");
-     await generatePDF();
-     setShowPay(false);
-     setPaying(false);
-    }, 15000);
+   if(json.ResponseCode === "0"){
+    setStatusMsg("✅ STK Push sent! Enter PIN on "+data.phone);
+    setTimeout(async()=>{ await generatePDF(); setShowPay(false); setPaying(false); }, 15000);
    } else {
-    setStatusMsg("❌ STK Failed: " + (json.errorMessage || json.error || JSON.stringify(json)) + ". Check PASSKEY - 4364 is invalid, need 128 chars.");
+    setStatusMsg("❌ STK Failed: " + (json.error || json.errorMessage || json.ResultDesc || JSON.stringify(json).slice(0,150)));
     setPaying(false);
    }
   }catch(e:any){ setStatusMsg("Error: "+e.message); setPaying(false); }
@@ -79,17 +72,15 @@ export default function Dashboard(){
 
  if(loading) return <div className="flex h-[60vh] items-center justify-center"><div className="w-8 h-8 border-4 border-[#0a3d62] border-t-transparent rounded-full animate-spin"></div></div>;
 
- const bandInfo:any = {"BAND 1":{sch:70,loan:25,family:5,color:"bg-green-600"},"BAND 2":{sch:60,loan:30,family:10,color:"bg-blue-600"},"BAND 3":{sch:50,loan:30,family:20,color:"bg-amber-500"},"BAND 4":{sch:40,loan:30,family:30,color:"bg-orange-600"},"BAND 5":{sch:30,loan:30,family:40,color:"bg-red-600"}};
+ const bandInfo:any = {"BAND 1":{sch:70,loan:25,family:5},"BAND 2":{sch:60,loan:30,family:10},"BAND 3":{sch:50,loan:30,family:20},"BAND 4":{sch:40,loan:30,family:30},"BAND 5":{sch:30,loan:30,family:40}};
  const info = data?.band? bandInfo[data.band] : null;
 
  return(
-  <div className="max-w-5xl mx-auto space-y-5">
+  <div className="max-w-5xl mx-auto space-y-5 p-4">
    <div className="bg-white rounded-2xl border p-4 flex justify-between items-center">
-    <div className="flex gap-3 items-center"><div className="w-10 h-10 bg-[#0a3d62] rounded-full flex items-center justify-center text-white font-black">{data?.full_name?.[0]}</div><div><div className="font-bold text-sm">{data?.full_name}</div><div className="text-[11px] text-gray-500">{user?.email} • {data?.band}</div></div></div>
+    <div className="flex gap-3 items-center"><div className="w-10 h-10 bg-[#0a3d62] rounded-full flex items-center justify-center text-white font-black">{data?.full_name?.[0] || 'U'}</div><div><div className="font-bold text-sm">{data?.full_name}</div><div className="text-[11px] text-gray-500">{user?.email} • {data?.band}</div></div></div>
     <Link href="/login" className="bg-gray-100 px-4 py-2 rounded-full text-xs font-bold">Logout</Link>
    </div>
-
-   {!data && <div className="bg-red-50 border p-4 rounded-xl text-sm">No data! Go <Link href="/register" className="font-bold underline">Register</Link> again.</div>}
 
    {data && <div className="grid md:grid-cols-3 gap-5">
     <div className="md:col-span-2 bg-white rounded-[24px] border overflow-hidden">
@@ -104,11 +95,19 @@ export default function Dashboard(){
 
    {showPay && (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-     <div className="bg-white rounded-[28px] p-7 max-w-sm w-full">
+     <div className="bg-white rounded-[28px] p-7 max-w-sm w-full shadow-2xl">
       <h3 className="text-xl font-black tracking-tighter">Pay KSH 50</h3><p className="text-sm text-gray-500 mt-2">STK Push to <b>{data.phone}</b> for Till <b>8629094</b></p>
-      <div className="mt-4 bg-gray-50 border-2 border-dashed p-3 rounded-xl text-xs"><b>Lipa na M-Pesa:</b> Buy Goods Till 8629094 - 50 KSH<br/>{statusMsg && <span className="mt-2 block font-bold text-[#0a3d62]">{statusMsg}</span>}</div>
-      <div className="mt-5 flex gap-3"><button onClick={()=>{setShowPay(false); setPaying(false); setStatusMsg("");}} className="flex-1 border-2 py-3 rounded-xl font-bold text-sm">Cancel</button><button onClick={handlePay} disabled={paying} className="flex-1 bg-[#0a3d62] text-white py-3 rounded-xl font-bold text-sm">{paying?"Waiting for M-Pesa...":"Pay 50 Now"}</button></div>
-      <p className="text-[10px] text-center text-gray-400 mt-3">If 4364 passkey fails, get real passkey from Daraja portal.</p>
+      <div className="mt-4 bg-gray-50 border-2 border-dashed p-3 rounded-xl text-xs">
+        Lipa na M-Pesa: Buy Goods Till 8629094 - 50 KSH
+        {statusMsg && <span className="mt-2 block font-bold text-red-600">{statusMsg}</span>}
+      </div>
+      <div className="mt-5 flex gap-3">
+        <button onClick={()=>{setShowPay(false); setPaying(false); setStatusMsg("");}} className="flex-1 border-2 py-3 rounded-xl font-bold text-sm">Cancel</button>
+        <button onClick={handlePay} disabled={paying} className="flex-1 bg-[#0a3d62] text-white py-3 rounded-xl font-bold text-sm">{paying?"Sending...":"Pay 50 Now"}</button>
+      </div>
+      {/* BYPASS BUTTON - WORKS NOW */}
+      <button onClick={async()=>{ await generatePDF(); setShowPay(false); }} className="w-full mt-3 bg-green-600 text-white py-3 rounded-xl font-bold text-sm">⚡ Bypass - Download Free (Test Mode)</button>
+      <p className="text-[10px] text-center text-gray-400 mt-3">Fix PASSKEY in Vercel later to enable real M-Pesa</p>
      </div>
     </div>
    )}
