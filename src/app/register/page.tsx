@@ -1,21 +1,35 @@
-"use client"
-import { useState } from "react"
-import Link from "next/link"
-export default function RegisterPage(){
-  const [f,setF]=useState({id:"", email:"", full:"", pass:""});
-  const handleReg=(e:any)=>{
-    e.preventDefault();
-    const users=JSON.parse(localStorage.getItem("hef_users")||"[]");
-    if(users.find((u:any)=>u.id===f.id)){ alert("ID already registered"); return; }
-    users.push(f); localStorage.setItem("hef_users", JSON.stringify(users));
-    alert("Success! Login now"); window.location.href="/";
-  }
-  return (<div><div style={{background:"#1565c0", color:"#fff", padding:"12px 20px", fontWeight:800}}>HEF PORTAL</div>
-  <div style={{display:"flex", justifyContent:"center", marginTop:40}}><form onSubmit={handleReg} style={{background:"#fff", width:420, padding:22, borderRadius:6, display:"flex", flexDirection:"column", gap:12}}>
-    <h3>Create HEF Account</h3><input placeholder="National ID" value={f.id} onChange={e=>setF({...f,id:e.target.value})} style={{padding:11, border:"1px solid #ccc"}} required/>
-    <input placeholder="Full Name" value={f.full} onChange={e=>setF({...f,full:e.target.value})} style={{padding:11, border:"1px solid #ccc"}} required/>
-    <input placeholder="Email" value={f.email} onChange={e=>setF({...f,email:e.target.value})} style={{padding:11, border:"1px solid #ccc"}} required/>
-    <input type="password" placeholder="Password" value={f.pass} onChange={e=>setF({...f,pass:e.target.value})} style={{padding:11, border:"1px solid #ccc"}} required/>
-    <button style={{padding:11, background:"#2e7d32", color:"#fff", border:"none", fontWeight:700}}>Register</button>
-    <Link href="/" style={{textAlign:"center", color:"#1565c0"}}>Already have account? Login</Link></form></div></div>)
+"use client";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+export default function Register(){
+ const [form,setForm]=useState({full_name:"",id_number:"",email:"",phone:"",income:""});
+ const [loading,setLoading]=useState(false);
+ const [msg,setMsg]=useState("");
+
+ const submit=async(e:any)=>{
+  e.preventDefault(); setLoading(true); setMsg("");
+  const incomeNum=Number(form.income);
+  let band="BAND 5"; if(incomeNum<=23000) band="BAND 1"; else if(incomeNum<=60000) band="BAND 2"; else if(incomeNum<=120000) band="BAND 3"; else if(incomeNum<=300000) band="BAND 4";
+  const {error}=await supabase.from("registrations").insert([{...form,income:incomeNum,band}]);
+  if(error){ setMsg("Error: "+error.message); } else { setMsg(`✅ Saved! You are ${band}. We will contact you.`); setForm({full_name:"",id_number:"",email:"",phone:"",income:""}); }
+  setLoading(false);
+ };
+
+ return(
+  <div className="max-w-md mx-auto p-4">
+   <div className="bg-white p-6 rounded-2xl shadow border">
+    <h1 className="text-2xl font-black text-[#0a3d62]">Create HEF Account</h1><p className="text-sm text-gray-500">Save your band & get updates</p>
+    <form onSubmit={submit} className="mt-4 space-y-3">
+     <input required placeholder="Full Name" value={form.full_name} onChange={e=>setForm({...form,full_name:e.target.value})} className="w-full p-3 border rounded-lg"/>
+     <input required placeholder="ID Number" value={form.id_number} onChange={e=>setForm({...form,id_number:e.target.value})} className="w-full p-3 border rounded-lg"/>
+     <input required type="email" placeholder="Email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className="w-full p-3 border rounded-lg"/>
+     <input required placeholder="Phone (07...)" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="w-full p-3 border rounded-lg"/>
+     <input required type="number" placeholder="Monthly Income e.g 45000" value={form.income} onChange={e=>setForm({...form,income:e.target.value})} className="w-full p-3 border rounded-lg"/>
+     <button disabled={loading} className="w-full bg-[#0a3d62] text-white p-3 rounded-lg font-bold">{loading?"Saving...":"Save & Check My Band"}</button>
+    </form>
+    {msg && <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">{msg}</div>}
+   </div>
+  </div>
+ );
 }
